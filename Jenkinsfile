@@ -4,8 +4,9 @@ pipeline {
     environment {
         // --- [설정 변경 구간 시작] ---
         // 1. Docker Hub 설정
-        DOCKER_REGISTRY_USER = 'active-webmaker'     // 본인의 Docker Hub ID
-        DOCKER_IMAGE_NAME    = 'my-app-image'        // 생성할 이미지 이름
+        // 변경: 사용자 제공 Docker Hub 리포지토리 `aderbart/aws-cicd-repo` 사용
+        DOCKER_REGISTRY_USER = 'aderbart'     // Docker Hub 사용자명 (네임스페이스)
+        DOCKER_IMAGE_NAME    = 'aws-cicd-repo'        // 생성할 이미지 이름 (리포지토리명)
         
         // 2. GitOps 설정 (배포용 리포지토리)
         DEPLOY_REPO_URL      = 'github.com/active-webmaker/deploy-repo.git' // https:// 제외
