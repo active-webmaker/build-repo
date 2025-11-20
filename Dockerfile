@@ -1,3 +1,10 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY . /app
+RUN pip install --no-cache-dir flask
+ENV FLASK_ENV=production
+EXPOSE 8000
+CMD ["python", "-c", "from flask import Flask; app=Flask(__name__); @app.route('/')\ndef h(): return 'ok'; app.run(host='0.0.0.0', port=8000)"]
 # Python 이미지를 기반으로 설정
 FROM python:3.9-slim
 
