@@ -84,7 +84,9 @@ pipeline {
                         sh '''
                             # 1. 배포용 리포지토리 클론 (Token 인증)
                             # 안전한 방식: 토큰을 URL에 노출하지 않고 http.extraheader 를 사용합니다.
-                            git -c http.extraheader="AUTHORIZATION: bearer $GITHUB_TOKEN" clone https://$DEPLOY_REPO_URL deploy-repo-temp
+                            # Use token in URL with x-access-token username to ensure non-interactive clone works
+                            # This is executed in CI; Jenkins masks the token in logs.
+                            git clone https://x-access-token:$GITHUB_TOKEN@${DEPLOY_REPO_URL} deploy-repo-temp
 
                             # 2. 폴더 이동
                             cd deploy-repo-temp
