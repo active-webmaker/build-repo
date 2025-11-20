@@ -80,37 +80,35 @@ pipeline {
                     
                     // GitHub Token을 사용하여 deploy-repo 클론 및 수정
                     withCredentials([string(credentialsId: env.GITHUB_TOKEN_ID, variable: 'GITHUB_TOKEN')]) {
-                        sh """
+                        sh '''
                             # 1. 배포용 리포지토리 클론 (Token 인증)
                             # 안전한 방식: 토큰을 URL에 노출하지 않고 http.extraheader 를 사용합니다.
-                            # NOTE: ${GITHUB_TOKEN}는 쉘 환경 변수로 전달되므로 Groovy가 해석하지 않도록 $를 이스케이프합니다.
-                            git -c http.extraheader="AUTHORIZATION: bearer \$GITHUB_TOKEN" clone https://${env.DEPLOY_REPO_URL} deploy-repo-temp
-                            
+                            git -c http.extraheader="AUTHORIZATION: bearer $GITHUB_TOKEN" clone https://$DEPLOY_REPO_URL deploy-repo-temp
+
                             # 2. 폴더 이동
                             cd deploy-repo-temp
-                            
+
                             # 3. Git 설정 (커밋 기록용)
                             git config user.email "jenkins@pipeline.com"
                             git config user.name "Jenkins Pipeline"
-                            
+
                             # 4. YAML 파일 내 이미지 태그 수정 (sed 명령어 사용)
                             # 주의: YAML 파일에서 image: 항목을 찾아 태그를 교체함
                             # 기존 내용 예시: image: active-webmaker/my-app-image:v1
-                            sed -i 's|image: ${env.DOCKER_REGISTRY_USER}/${env.DOCKER_IMAGE_NAME}:.*|image: ${env.DOCKER_REGISTRY_USER}/${env.DOCKER_IMAGE_NAME}:${env.IMAGE_TAG}|g' ${env.DEPLOY_YAML_PATH}
-                            
+                            sed -i "s|image: $DOCKER_REGISTRY_USER/$DOCKER_IMAGE_NAME:.*|image: $DOCKER_REGISTRY_USER/$DOCKER_IMAGE_NAME:$IMAGE_TAG|g" "$DEPLOY_YAML_PATH"
+
                             # 5. 변경 사항 확인
-                            cat ${env.DEPLOY_YAML_PATH}
+                            cat "$DEPLOY_YAML_PATH"
 
                             # 6. Git Commit & Push (파일에 변화가 있을 때만)
-                            # 서브셸의 $(...) 앞의 $를 이스케이프하여 Groovy 문자열 파싱 문제를 방지합니다.
-                            if [ -n "\$(git status --porcelain)" ]; then
-                                git add ${env.DEPLOY_YAML_PATH}
-                                git commit -m "Update image tag to ${env.IMAGE_TAG} by Jenkins Build #${env.BUILD_NUMBER}"
+                            if [ -n "$(git status --porcelain)" ]; then
+                                git add "$DEPLOY_YAML_PATH"
+                                git commit -m "Update image tag to $IMAGE_TAG by Jenkins Build #$BUILD_NUMBER"
                                 git push origin main
                             else
-                                echo "No changes in ${env.DEPLOY_YAML_PATH}; skipping commit."
+                                echo "No changes in $DEPLOY_YAML_PATH; skipping commit."
                             fi
-                        """
+                        '''
                     }
                 }
             }
