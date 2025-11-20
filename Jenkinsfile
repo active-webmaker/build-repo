@@ -10,7 +10,7 @@ pipeline {
         
         // 2. GitOps 설정 (배포용 리포지토리)
         DEPLOY_REPO_URL      = 'github.com/active-webmaker/deploy-repo.git' // https:// 제외
-        DEPLOY_YAML_PATH     = './k8s/deployment.yaml' // deploy-repo 내에서 수정할 yaml 파일 경로
+        DEPLOY_YAML_PATH     = './deployment.yaml' // deploy-repo 내에서 수정할 yaml 파일 경로
         
         // 3. Jenkins에 등록한 Credential ID
         // 참고: `Credentials.md`에 등록된 이름/ID를 사용하세요.
