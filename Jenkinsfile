@@ -88,6 +88,9 @@ pipeline {
                             # This is executed in CI; Jenkins masks the token in logs.
                             git clone https://x-access-token:$GITHUB_TOKEN@${DEPLOY_REPO_URL} deploy-repo-temp
 
+                            # Copy manifest from build repo to deploy repo (workspace path)
+                            cp -f k8s/deployment.yaml deploy-repo-temp/deployment.yaml
+
                             # 2. 폴더 이동
                             cd deploy-repo-temp
 
