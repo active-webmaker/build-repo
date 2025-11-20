@@ -63,8 +63,9 @@ pipeline {
                 script {
                     echo 'Pushing image to Docker Hub...'
                     // Jenkins Credentials를 사용하여 로그인 후 푸시
-                    withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                        withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        // Use single-quoted shell string to avoid Groovy interpolating $DOCKER_PASS / $DOCKER_USER
+                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                         sh "docker push ${env.DOCKER_REGISTRY_USER}/${env.DOCKER_IMAGE_NAME}:${env.IMAGE_TAG}"
                     }
                 }
@@ -82,7 +83,8 @@ pipeline {
                         sh """
                             # 1. 배포용 리포지토리 클론 (Token 인증)
                             # 안전한 방식: 토큰을 URL에 노출하지 않고 http.extraheader 를 사용합니다.
-                            git -c http.extraheader="AUTHORIZATION: bearer ${GITHUB_TOKEN}" clone https://${env.DEPLOY_REPO_URL} deploy-repo-temp
+                            # NOTE: ${GITHUB_TOKEN}는 쉘 환경 변수로 전달되므로 Groovy가 해석하지 않도록 $를 이스케이프합니다.
+                            git -c http.extraheader="AUTHORIZATION: bearer \$GITHUB_TOKEN" clone https://${env.DEPLOY_REPO_URL} deploy-repo-temp
                             
                             # 2. 폴더 이동
                             cd deploy-repo-temp
@@ -100,7 +102,8 @@ pipeline {
                             cat ${env.DEPLOY_YAML_PATH}
 
                             # 6. Git Commit & Push (파일에 변화가 있을 때만)
-                            if [ -n "$(git status --porcelain)" ]; then
+                            # 서브셸의 $(...) 앞의 $를 이스케이프하여 Groovy 문자열 파싱 문제를 방지합니다.
+                            if [ -n "\$(git status --porcelain)" ]; then
                                 git add ${env.DEPLOY_YAML_PATH}
                                 git commit -m "Update image tag to ${env.IMAGE_TAG} by Jenkins Build #${env.BUILD_NUMBER}"
                                 git push origin main
