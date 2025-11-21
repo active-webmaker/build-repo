@@ -7,4 +7,4 @@ COPY . /app
 RUN pip install --no-cache-dir flask
 ENV FLASK_ENV=production
 EXPOSE 8000
-CMD ["python", "-c", "from flask import Flask; app=Flask(__name__); @app.route('/')\ndef h(): return 'ok'; app.run(host='0.0.0.0', port=8000)"]
+CMD ["python", "-c", "from flask import Flask\napp = Flask(__name__)\n\n@app.route(\"/\")\ndef h():\n    return \"ok\"\n\nif __name__ == \"__main__\":\n    app.run(host=\"0.0.0.0\", port=8000)"]
