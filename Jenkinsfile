@@ -22,7 +22,8 @@ pipeline {
             steps {
                 script {
                     env.IMAGE_TAG = "v${env.BUILD_NUMBER}"
-                    sh "docker build -t ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG} Django_Server"
+                    // 명시적으로 Django_Server/django_blog_app 경로와 Dockerfile 사용
+                    sh "docker build -t ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG} -f Django_Server/django_blog_app/Dockerfile Django_Server/django_blog_app"
                     withCredentials([usernamePassword(credentialsId: DOCKER_CREDS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                         sh "docker push ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG}"

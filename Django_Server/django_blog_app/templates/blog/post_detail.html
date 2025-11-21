@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<article class="mb-4">
+    <h1>{{ post.title }}</h1>
+    <p class="text-muted">{{ post.author }} · {{ post.created_at|date:'Y-m-d H:i' }}</p>
+
+    {% if post.thumbnail %}
+        <img src="{{ post.thumbnail.url }}" class="img-fluid mb-3" alt="thumbnail">
+    {% endif %}
+
+    <div>
+        {{ post.content|safe }}
+    </div>
+</article>
+
+{% if user == post.author %}
+    <a class="btn btn-secondary" href="{% url 'blog:post_update' post.pk %}">Edit</a>
+    <a class="btn btn-danger" href="{% url 'blog:post_delete' post.pk %}">Delete</a>
+{% endif %}
+
+<a class="btn btn-secondary" href="{% url 'blog:post_list' %}">List</a>
+{% endblock %}

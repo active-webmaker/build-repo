@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: django-blog
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+  namespace: django-blog
+stringData:
+  MYSQL_ROOT_PASSWORD: your-root-password
+  MYSQL_DATABASE: blogdb
+  MYSQL_USER: bloguser
+  MYSQL_PASSWORD: blogpass
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-config
+  namespace: django-blog
+data:
+  DJANGO_SECRET_KEY: "change-me-in-real-env"
+  DJANGO_DEBUG: "false"
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  DB_NAME: "blogdb"
+  DB_USER: "bloguser"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: django-blog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_DATABASE
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: django-blog
+spec:
+  selector:
+    app: mysql
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-blog-app
+  namespace: django-blog
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: django-blog-app
+  template:
+    metadata:
+      labels:
+        app: django-blog-app
+    spec:
+      containers:
+        - name: django-blog-app
+          image: your-registry.example.com/django-blog-app:latest
+          env:
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: DJANGO_SECRET_KEY
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: DJANGO_DEBUG
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-blog-app
+  namespace: django-blog
+spec:
+  selector:
+    app: django-blog-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

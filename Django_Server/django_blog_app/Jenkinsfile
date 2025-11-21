@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY = "your-registry.example.com"
+        IMAGE_NAME = "django-blog-app"
+        KUBE_CONTEXT = "your-kube-context" // kubectl context name
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def tag = "${env.BUILD_NUMBER}"
+                    sh "docker build -t ${REGISTRY}/${IMAGE_NAME}:${tag} ."
+                }
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                script {
+                    def tag = "${env.BUILD_NUMBER}"
+                    withCredentials([usernamePassword(credentialsId: 'docker-registry-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh "echo $DOCKER_PASS | docker login ${REGISTRY} -u $DOCKER_USER --password-stdin"
+                    }
+                    sh "docker push ${REGISTRY}/${IMAGE_NAME}:${tag}"
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    def tag = "${env.BUILD_NUMBER}"
+                    sh "kubectl config use-context ${KUBE_CONTEXT}"
+                    sh "kubectl apply -f k8s/blog-app.yaml"
+                    sh "kubectl set image deployment/django-blog-app django-blog-app=${REGISTRY}/${IMAGE_NAME}:${tag}"
+                }
+            }
+        }
+    }
+}
