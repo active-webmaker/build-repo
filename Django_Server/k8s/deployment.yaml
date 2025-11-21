@@ -25,6 +25,8 @@ spec:
           value: "1"
         - name: PYTHONDONTWRITEBYTECODE
           value: "1"
+        - name: ALLOWED_HOSTS
+          value: "*"
         readinessProbe:
           httpGet:
             path: /
